@@ -1,4 +1,4 @@
-# Single-file Express.js Account Backend Boilerplate
+# Single-file Express.js account backend boilerplate
 
 ### Get started
 After cloning the repository, run ```npm install``` to install necessary dependencies.
