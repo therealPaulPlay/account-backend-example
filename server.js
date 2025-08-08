@@ -16,7 +16,7 @@ const port = 3000; // !CHANGE to your preferred port
 app.use(cors({
     origin: [
         "http://localhost:3000", // For testing
-        "https://input-your-domain.com" // !CHANGE this to your domain, add more domains if needed. Performing requests from unlisted websites will result in CORS errors.
+        "https://input-your-domain.com" // !CHANGE this to your domain, add more domains if needed - Performing requests from unlisted websites will result in CORS errors
     ]
 }));
 
@@ -26,7 +26,6 @@ app.use(requestIp.mw()); // Apply the requestIp middleware which searches for th
 app.use(xss()); // Prevent xss attacks by stripping out scripts
 
 // MySQL Database Connection ----------------------------------------------------------------------------
-
 const RETRY_INTERVAL = 5000;
 let pool;
 
@@ -79,7 +78,8 @@ connectDB();
 
 // Password checking and hash generation ------------------------------------------------------------------------------------------------------
 
-// A hash is a large string that can be created from a user password and validated against a user password. Hashing is a one-way operation, it cannot be reverted back into a password.
+// A hash is a large string that can be created from a user password and validated against a user password 
+// Hashing is a one-way operation, the hash cannot be reverted back into a password
 
 // Generate password hash for the registration
 async function getEncodedPassword(plainPassword) {
@@ -105,7 +105,7 @@ async function isPasswordValid(plainPassword, hashedPassword) {
 }
 
 // JWT Authentication with Bearer Token ------------------------------------------------------------------------------------------------
-const SECRET_KEY = "YOUR_KEY"; // !CHANGE input a JWT secret key. Simply come up with a long string of numbers and characters, ideally up to 32 chars long. For better security, make sure to use a .env file and store your keys there
+const SECRET_KEY = "YOUR_KEY"; // !CHANGE input a JWT secret key. Make sure to use a .env file and to store your secret keys there!
 
 function createNewJwtToken(user) {
     try {
@@ -127,8 +127,8 @@ function createNewJwtToken(user) {
     }
 }
 
-// Check if the id from the bearer token matches the ip passed in the request. This is to make sure the token belongs to this user and not just any user.
-// Use this middleware for all requests that include the "id" of the user in the request body as well as the bearer token in the Authorization header to ensure it's really them.
+// Check if the id from the bearer token matches the ip passed in the request - This is to make sure the token belongs to this user and not just any user
+// Use this middleware for all requests that include the "id" of the user in the request body as well as the bearer token in the Authorization header to ensure it's really them
 function authenticateTokenWithId(req, res, next) {
     const authorizationHeader = req.headers['authorization'];
 
@@ -165,7 +165,7 @@ function authenticateTokenWithId(req, res, next) {
 
 const loginLimiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    keyGenerator: (req) => req.clientIp, // Use correct ip and not the one of the proxy. This uses request-ip, a package that checks various aspects of the request to get the correct ip address.
+    keyGenerator: (req) => req.clientIp, // Use correct ip and not the one of the proxy - This uses request-ip, a package that checks various headers (like X-Forwarded-For and X-Real-IP) of the request to get the correct ip address
     max: 5,
     message: 'Too many login attempts from this IP, please try again later.'
 });
@@ -386,7 +386,7 @@ app.post('/accounts/reset-password-request', standardLimiter, async (req, res) =
         const resetToken = jwt.sign({ email: email, id: user.id }, RESET_SECRET_KEY, { expiresIn: '1h' });
 
         // Send email with the reset token
-        const resetUrl = `https://your-domain.com?token=${resetToken}`; // !CHANGE this to your domain and handle it in the frontend accordingly. You can get the query parameter using URLSearchParams https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams
+        const resetUrl = `https://your-domain.com?token=${resetToken}`; // !CHANGE this to your domain and handle it in the frontend accordingly (you can get the query parameter using URLSearchParams https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams)
         const mailOptions = {
             from: 'your-gmail-address@gmail.com', // !CHANGE this to your email
             to: email,
