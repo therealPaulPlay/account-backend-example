@@ -145,7 +145,7 @@ function authenticateTokenWithId(req, res, next) {
             }
 
             const tokenUserId = decoded.userId;
-            const requestUserId = req.body.id ? req.body.id : req.params.id; // get id from params or from body, depending on what exists !CHANGE this if you want to use /:id as a request parameter for different use cases
+            const requestUserId = req.body.id ? req.body.id : req.params.id; // Get id from params or from body, depending on what exists !CHANGE this if you want to use /:id as a request parameter for different use cases
 
             // Compare token userId with the requested userId
             if (tokenUserId != requestUserId) {
