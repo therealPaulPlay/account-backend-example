@@ -1,10 +1,8 @@
 const express = require('express');
 const mysql = require('mysql2');
-const bodyParser = require('body-parser');
 const requestIp = require('request-ip');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-const xss = require('xss-clean');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const rateLimit = require('express-rate-limit');
@@ -21,9 +19,8 @@ app.use(cors({
 }));
 
 // Middleware -------------------------------------------------------------------------------------
-app.use(bodyParser.json()); // Parse incoming json requests automatically
+app.use(express.json()); // Auto-parse json bodies of incoming requests
 app.use(requestIp.mw()); // Apply the requestIp middleware which searches for the userIP in many headers and request details
-app.use(xss()); // Prevent xss attacks by stripping out scripts
 
 // MySQL Database Connection ----------------------------------------------------------------------------
 const RETRY_INTERVAL = 5000;
