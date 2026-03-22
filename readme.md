@@ -23,7 +23,7 @@ This boilerplate expects a basic MySQL database setup with:
    2. created_at (datetime)
    3. email (varchar(255))
    4. password (varchar(255))
-   5. user_name (varchar(255)
+   5. user_name (varchar(255))
 
 ## Resources
 [What is a JWT Token?](https://jwt.io/introduction)

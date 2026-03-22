@@ -133,13 +133,8 @@ function authenticateTokenWithId(req, res, next) {
         const token = authorizationHeader.substring('Bearer '.length);
 
         jwt.verify(token, SECRET_KEY, (err, decoded) => {
-            if (err) {
-                return res.status(403).json({ status: 403, error: "An error occurred decoding the Authentication token." });
-            }
-
-            if (!decoded || !decoded.userId) {
-                return res.status(403).json({ status: 403, error: "Access token lacks user id." });
-            }
+            if (err) return res.status(403).json({ status: 403, error: "Error occurred decoding the Authentication token." });
+            if (!decoded || !decoded.userId) return res.status(403).json({ status: 403, error: "Access token lacks user id." });
 
             const tokenUserId = decoded.userId;
             const requestUserId = req.body.id ? req.body.id : req.params.id; // Get id from params or from body, depending on what exists !CHANGE this if you want to use /:id as a request parameter for different use cases
@@ -187,23 +182,16 @@ const standardLimiter = rateLimit({
 app.post('/accounts/register', registerLimiter, async (req, res) => {
     const db = getDB();
 
-    let { userName, email, password } = req.body; // Include these 3 properties in the request body
+    let { userName: username, email, password } = req.body; // Include these 3 properties in the request body
 
-    if (!userName || !email || !password) {
-        return res.status(400).json({ error: 'Username, email, and password are required.' });
-    }
+    if (!username || !email || !password) return res.status(400).json({ error: 'Username, email, and password are required.' });
 
     try {
-        userName = userName.trim(); // Remove whitespaces from username
+        username = username.trim(); // Remove whitespaces from username
         email = email.trim().toLowerCase(); // Remove whitespaces from email and lowercase
 
-        if (userName.length < 4 || email.length < 5) {
-            return res.status(400).json({ error: "Username or email are too short." });
-        }
-
-        if (userName.length > 50 || email.length > 100) {
-            return res.status(400).json({ error: "Username or email are too long." });
-        }
+        if (username.length < 3 || email.length < 5) return res.status(400).json({ error: "Username or email are too short." });
+        if (username.length > 50 || email.length > 100) return res.status(400).json({ error: "Username or email are too long." });
 
         // Check if email already exists
         const emailExistsQuery = 'SELECT id FROM accounts WHERE email = ?';
@@ -214,22 +202,18 @@ app.post('/accounts/register', registerLimiter, async (req, res) => {
             });
         });
 
-        if (existingEmailUser) {
-            return res.status(409).json({ error: 'Email is already in use.' });
-        }
+        if (existingEmailUser) return res.status(409).json({ error: 'Email is already in use.' });
 
         // Check if username already exists to prevent duplicates
-        const userNameExistsQuery = 'SELECT id FROM accounts WHERE user_name = ?';
-        const existingUserNameUser = await new Promise((resolve, reject) => {
-            db.execute(userNameExistsQuery, [userName], (err, results) => {
+        const usernameExistsQuery = 'SELECT id FROM accounts WHERE user_name = ?';
+        const existingUsernameUser = await new Promise((resolve, reject) => {
+            db.execute(usernameExistsQuery, [username], (err, results) => {
                 if (err) return reject(err);
                 resolve(results[0]);
             });
         });
 
-        if (existingUserNameUser) {
-            return res.status(409).json({ error: 'Username is already taken.' });
-        }
+        if (existingUsernameUser) return res.status(409).json({ error: 'Username is already taken.' });
 
         // Generate hashed password
         const hashedPassword = await getEncodedPassword(password);
@@ -239,8 +223,8 @@ app.post('/accounts/register', registerLimiter, async (req, res) => {
 
         // Insert new user into the database
         const insertUserQuery = 'INSERT INTO accounts (user_name, email, password, created_at) VALUES (?, ?, ?, ?)';
-        const newUser = await new Promise((resolve, reject) => {
-            db.execute(insertUserQuery, [userName, email, hashedPassword, now], (err, results) => {
+        await new Promise((resolve, reject) => {
+            db.execute(insertUserQuery, [username, email, hashedPassword, now], (err, results) => {
                 if (err) return reject(err);
                 resolve(results.insertId);
             });
@@ -258,9 +242,7 @@ app.post('/accounts/login', loginLimiter, async (req, res) => {
     const db = getDB();
     const { email, password } = req.body; // Include these 2 properties in the request body
 
-    if (!email || !password) {
-        return res.status(400).json({ error: 'Email and password are required.' });
-    }
+    if (!email || !password) return res.status(400).json({ error: 'Email and password are required.' });
 
     try {
         // Find user by email
@@ -272,15 +254,11 @@ app.post('/accounts/login', loginLimiter, async (req, res) => {
             });
         });
 
-        if (!user) {
-            return res.status(400).json({ error: 'Invalid credentials.' });
-        }
+        if (!user) return res.status(400).json({ error: 'Invalid credentials.' });
 
         // Check password
         const isValidPassword = await isPasswordValid(password, user.password);
-        if (!isValidPassword) {
-            return res.status(400).json({ error: 'Invalid credentials.' });
-        }
+        if (!isValidPassword) return res.status(400).json({ error: 'Invalid credentials.' });
 
         // Generate JWT token
         const accessToken = createNewJwtToken({ email, id: user.id });
@@ -289,7 +267,7 @@ app.post('/accounts/login', loginLimiter, async (req, res) => {
             message: 'Login successful',
             bearerToken: accessToken, // Here, the bearer token is being returned. Save it in the frontend to authorize future requests.
             id: user.id,
-            userName: user.user_name
+            username: user.user_name
         });
     } catch (error) {
         console.error('Error during login:', error);
@@ -302,9 +280,7 @@ app.delete('/accounts/delete', standardLimiter, async (req, res) => {
     const db = getDB();
     const { id, password } = req.body; // include these 2 properties in the request body
 
-    if (!id || !password) {
-        return res.status(400).json({ error: 'Id and password are required.' });
-    }
+    if (!id || !password) return res.status(400).json({ error: 'Id and password are required.' });
 
     try {
         // Find user by email to retrieve password hash
@@ -316,15 +292,11 @@ app.delete('/accounts/delete', standardLimiter, async (req, res) => {
             });
         });
 
-        if (!user) {
-            return res.status(400).json({ error: 'Invalid credentials. User not found.' });
-        }
+        if (!user) return res.status(400).json({ error: 'Invalid credentials. User not found.' });
 
         // Check password
         const isValidPassword = await isPasswordValid(password, user.password);
-        if (!isValidPassword) {
-            return res.status(400).json({ error: 'Invalid credentials.' });
-        }
+        if (!isValidPassword) return res.status(400).json({ error: 'Invalid credentials.' });
 
         // Delete user account
         const deleteUserQuery = 'DELETE FROM accounts WHERE id = ?';
@@ -375,9 +347,7 @@ app.post('/accounts/reset-password-request', standardLimiter, async (req, res) =
             });
         });
 
-        if (!user) {
-            return res.status(404).json({ error: 'No account with that email found.' });
-        }
+        if (!user) return res.status(404).json({ error: 'No account with that email found.' });
 
         // Create a password reset token
         const resetToken = jwt.sign({ email: email, id: user.id }, RESET_SECRET_KEY, { expiresIn: '1h' });
@@ -405,9 +375,7 @@ app.post('/accounts/reset-password', standardLimiter, async (req, res) => {
     const db = getDB();
     const { token, newPassword } = req.body; // include these 2 properties in the request body
 
-    if (!token || !newPassword) {
-        return res.status(400).json({ error: 'Token and new password are required.' });
-    }
+    if (!token || !newPassword) return res.status(400).json({ error: 'Token and new password are required.' });
 
     try {
         // Verify the reset token + get user Id from the token so that the correct account's password can be changed
